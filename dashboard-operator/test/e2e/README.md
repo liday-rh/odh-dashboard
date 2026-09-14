@@ -19,14 +19,23 @@ delete that singleton resource.
 - A dedicated, existing namespace for namespaced test resources.
 - A kubeconfig stored in one file.
 - RBAC to get the test Namespace and Dashboard CRD; get, create, patch, and
-  delete Dashboards; and get Deployments and Endpoints in the test namespace.
+  delete Dashboards; and list, get, and delete Deployments, Pods, Services, and
+  Endpoints in the applications namespace.
 
 Set the required environment variables:
 
 ```bash
 export KUBECONFIG=/absolute/path/to/kubeconfig
-export TEST_NAMESPACE=dashboard-operator-e2e
+export TEST_NAMESPACE=redhat-ods-applications
+export TEST_GATEWAY_DOMAIN=apps.example.test
+export TEST_PLATFORM=odh # or rhoai
 ```
+
+`TEST_GATEWAY_DOMAIN` and `TEST_PLATFORM` are required by the module lifecycle
+suite. `TEST_NAMESPACE` must be the dashboard-operator applications namespace,
+because the suite verifies the operands reconciled there. Run the platform
+service-name cases once for each distribution; `TEST_PLATFORM` prevents a run
+against one distribution from accidentally claiming coverage for the other.
 
 `TestMain` verifies connectivity, the namespace, the Dashboard CRD, and its
 served API version before any test runs. It verifies the CRD but never installs
@@ -47,6 +56,13 @@ test run:
 make test-e2e E2E_TEST_ARGS='-run TestE2EDashboardLifecycle'
 ```
 
+Run all 34 RHOAIENG-83658 cases, or one ticket story, with:
+
+```bash
+make test-e2e E2E_TEST_ARGS='-run TestE2EModule'
+make test-e2e E2E_TEST_ARGS='-run TestE2EModuleLifecycle/TS2_06_override_wins_over_component'
+```
+
 The equivalent direct command is:
 
 ```bash
@@ -62,8 +78,8 @@ make build-e2e
 ```
 
 This produces `bin/e2e.test`. Copy that binary into a test image, mount a
-kubeconfig, set both required environment variables, and run it with standard
-testing flags:
+kubeconfig, set the environment variables required by the selected suite, and
+run it with standard testing flags:
 
 ```bash
 ./bin/e2e.test -test.v -test.run TestE2EDashboardLifecycle
