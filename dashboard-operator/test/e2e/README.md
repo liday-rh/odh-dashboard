@@ -19,8 +19,9 @@ delete that singleton resource.
 - A dedicated, existing namespace for namespaced test resources.
 - A kubeconfig stored in one file.
 - RBAC to get the test Namespace and Dashboard CRD; get, create, patch, and
-  delete Dashboards; and list, get, and delete Deployments, Pods, Services, and
-  Endpoints in the applications namespace.
+  delete Dashboards; list, get, patch, and delete Deployments and Pods; get
+  Services, ServiceAccounts, and NetworkPolicies; and create, get, and delete
+  ConfigMaps in the applications namespace.
 
 Set the required environment variables:
 
@@ -29,6 +30,7 @@ export KUBECONFIG=/absolute/path/to/kubeconfig
 export TEST_NAMESPACE=redhat-ods-applications
 export TEST_GATEWAY_DOMAIN=apps.example.test
 export TEST_PLATFORM=odh # or rhoai
+export TEST_OPERATOR_DEPLOYMENT=dashboard-operator # optional; this is the default
 ```
 
 `TEST_GATEWAY_DOMAIN` and `TEST_PLATFORM` are required by the module lifecycle
@@ -36,6 +38,8 @@ suite. `TEST_NAMESPACE` must be the dashboard-operator applications namespace,
 because the suite verifies the operands reconciled there. Run the platform
 service-name cases once for each distribution; `TEST_PLATFORM` prevents a run
 against one distribution from accidentally claiming coverage for the other.
+The degraded-image case temporarily rolls the dashboard-operator Deployment;
+set `TEST_OPERATOR_DEPLOYMENT` when it has a non-default name.
 
 `TestMain` verifies connectivity, the namespace, the Dashboard CRD, and its
 served API version before any test runs. It verifies the CRD but never installs
@@ -56,12 +60,19 @@ test run:
 make test-e2e E2E_TEST_ARGS='-run TestE2EDashboardLifecycle'
 ```
 
-Run all 34 RHOAIENG-83658 cases, or one ticket story, with:
+Run the RHOAIENG-83658 cases, or one ticket story, with:
 
 ```bash
 make test-e2e E2E_TEST_ARGS='-run TestE2EModule'
 make test-e2e E2E_TEST_ARGS='-run TestE2EModuleLifecycle/TS2_06_override_wins_over_component'
 ```
+
+The current Dashboard API no longer exposes `deploymentMode`, and the
+controller no longer supports sidecar module deployment. The former TS5
+sidecar-to-standalone cases are therefore represented by standalone resource,
+legacy-sidecar cleanup, federation, and idempotency coverage. Restoring literal
+mode-switch coverage requires a historical release test and is not claimed by
+this suite.
 
 The equivalent direct command is:
 
