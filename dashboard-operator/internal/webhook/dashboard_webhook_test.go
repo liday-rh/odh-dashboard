@@ -352,6 +352,15 @@ func TestDashboardHandler_ProtectsControllerOwnedStateConfigMap(t *testing.T) {
 			assert.True(t, handler.Handle(context.Background(), request).Allowed)
 		})
 	}
+	request := admission.Request{AdmissionRequest: admissionv1.AdmissionRequest{
+		Operation: admissionv1.Delete,
+		Resource:  metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"},
+		Namespace: "opendatahub",
+		OldObject: runtime.RawExtension{Raw: configMapRaw(t)},
+		UserInfo:  authenticationv1.UserInfo{Username: controllerWriter},
+	}}
+	assert.True(t, handler.Handle(context.Background(), request).Allowed,
+		"controller-owned state ConfigMap DELETE should use oldObject.name when request.name is empty")
 }
 
 func TestDashboardHandler_DurableEnforcementSurvivesMissingFlag(t *testing.T) {

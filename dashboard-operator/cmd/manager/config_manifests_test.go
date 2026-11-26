@@ -265,6 +265,7 @@ func assertWebhookWiring(t *testing.T, cfg renderedConfig, mgr corev1.Container)
 		"object.?metadata.labels['dashboard.opendatahub.io/allow-namespaced-rbac'].orValue('')")
 	assert.Equal(t, "namespaced-rbac-state-changed", vwc.Webhooks[0].MatchConditions[2].Name)
 	assert.Contains(t, vwc.Webhooks[0].MatchConditions[2].Expression, "dashboard-namespaced-rbac-state")
+	assert.Contains(t, vwc.Webhooks[0].MatchConditions[2].Expression, "oldObject.?metadata.name.orValue(request.name)")
 
 	var serviceAccountEnv *corev1.EnvVar
 	for i := range mgr.Env {

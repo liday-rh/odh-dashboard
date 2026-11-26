@@ -56,7 +56,15 @@ func NewDashboardHandler(
 	return &admission.Webhook{
 		Handler: admission.HandlerFunc(func(ctx context.Context, req admission.Request) admission.Response {
 			if req.Resource == (metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}) {
-				if req.Namespace != operatorNamespace || req.Name != v1alpha1.NamespacedRBACStateConfigMapName {
+				name := req.Name
+				if name == "" && req.Operation == admissionv1.Delete {
+					var previous corev1.ConfigMap
+					if err := json.Unmarshal(req.OldObject.Raw, &previous); err != nil {
+						return admission.Errored(http.StatusBadRequest, fmt.Errorf("decoding previous ConfigMap: %w", err))
+					}
+					name = previous.Name
+				}
+				if req.Namespace != operatorNamespace || name != v1alpha1.NamespacedRBACStateConfigMapName {
 					return admission.Allowed("")
 				}
 				if req.Operation == admissionv1.Delete {
